@@ -1,21 +1,22 @@
-#load the required libararies 
+# load the required libararies 
 
 import glob
 import os
 from PIL import Image, ImageOps
 import numpy as np
 import pandas as pd
-from scipy.misc import imresize
+# from scipy.misc import imresize
+from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 import sys
 #load the keras libraries
 
-from keras.layers import Dropout, Input, Dense, Activation,GlobalMaxPooling2D, BatchNormalization, Flatten, Conv2D, MaxPooling2D
-from keras.models import Model, load_model
-from keras.optimizers import Adam
-from keras.callbacks import LearningRateScheduler, EarlyStopping
-from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.layers import Dropout, Input, Dense, Activation,GlobalMaxPooling2D, BatchNormalization, Flatten, Conv2D, MaxPooling2D
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import LearningRateScheduler, EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 
 def getClassNames(validation_path):

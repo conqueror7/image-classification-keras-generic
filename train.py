@@ -1,18 +1,18 @@
 from time import time
-from keras import applications
-from keras.preprocessing.image import ImageDataGenerator
-from keras import optimizers
-from keras.models import Sequential, Model
-from keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
-from keras import backend as k
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
+from tensorflow.keras import applications
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import optimizers
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dropout, Flatten, Dense, GlobalAveragePooling2D
+from tensorflow.keras import backend as k
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
 import os
 
 from models import Models
 import math
 
 
-def train_model(data_dir_train,data_dir_valid,batch_size,epochs,model_name,save_loc):
+def train_model(data_dir_train,data_dir_valid,batch_size,epochs,model_name,save_loc,weights=None):
 
     DATA_TRAIN = data_dir_train
     DATA_VALID = data_dir_valid
@@ -29,19 +29,20 @@ def train_model(data_dir_train,data_dir_valid,batch_size,epochs,model_name,save_
 
 
     #we can use any model from the below list of image classification model to train the network
-    keras_models= ['xception','vgg16','vgg19','resnet50','inceptionv3','inceptionresnetv2','nasnet','densenet121','densenet169','densenet201','mobilenet']
+    keras_models= ['xception','vgg16','vgg19','resnet50','inceptionv3','inceptionresnetv2','nasnet','densenet121','densenet169','densenet201','mobilenet','custom']
 
     modelsBuilder = Models(model_name,num_classes)
 
     if model_name in keras_models:
-        model_final,img_width,img_height = modelsBuilder.createModelBase()
+        model_final,img_width,img_height = modelsBuilder.createModelBase(weights)
 
-    #summary of the model built
-    model_final.summary()
 
     # Compile the model
     model_final.compile(loss = "categorical_crossentropy", optimizer = optimizers.SGD(lr=0.0001, momentum=0.9), metrics=["accuracy"])
-
+    
+    #summary of the model built
+    model_final.summary()
+    
     # Initiate the train and test generators with data Augumentation
     train_datagen = ImageDataGenerator(
     	rescale = 1./255)
@@ -63,12 +64,12 @@ def train_model(data_dir_train,data_dir_valid,batch_size,epochs,model_name,save_
 
     # Save the model according to the conditions
     model_save = save_loc + model_name +" weights-{epoch:02d}.hdf5"
-    checkpoint = ModelCheckpoint(model_save, monitor='val_acc', verbose=1, save_best_only=False, save_weights_only=False, period=1)
-    early_stopping = EarlyStopping(monitor='val_acc', min_delta=0, patience=15, verbose=1, mode='auto')
+    checkpoint = ModelCheckpoint(model_save, monitor='val_accuracy', verbose=1, save_best_only=False, save_weights_only=False, save_freq='epoch')
+    early_stopping = EarlyStopping(monitor='val_accuracy', min_delta=0, patience=3, verbose=1, mode='auto', restore_best_weights= True)
 
     # learning rate schedule
     def step_decay(EPOCH):
-    	initial_lrate = 0.001
+    	initial_lrate = 0.0001
     	drop = 0.1
     	epochs_drop = 20.0
     	lrate = initial_lrate * math.pow(drop, math.floor((1+EPOCH)/epochs_drop))
@@ -80,10 +81,10 @@ def train_model(data_dir_train,data_dir_valid,batch_size,epochs,model_name,save_
     # Train the model
     model_final.fit_generator(
     	train_generator,
-    	samples_per_epoch = nb_train_samples,
+    	steps_per_epoch = nb_train_samples//BATCH_SIZE,
     	epochs = EPOCH,
     	validation_data = validation_generator,
-    	validation_steps = nb_validation_samples,
+    	validation_steps = nb_validation_samples//BATCH_SIZE,
     	callbacks = [checkpoint, early_stopping, change_lr])
 
 
